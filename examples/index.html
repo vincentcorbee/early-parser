@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      .wrapper {
+        background-color: #ffffff;
+        padding: 20px;
+      }
+
+      .wrapper .label {
+        display: inline-block;
+        margin-right: 10px;
+      }
+
+      .wrapper>div:not(:last-of-type) {
+        margin-bottom: 10px;
+      }
+
+      .input {
+        white-space: pre;
+      }
+
+      .trees,
+      .parseTable {
+        background-color: #ffffff;
+      }
+
+      .table {
+        font-size: 0.75rem;
+        border: 1px solid black;
+        background-color: white;
+        overflow-x: auto;
+      }
+
+      .row,
+      .header {
+        padding: 5px;
+        border-bottom: 1px solid black;
+        white-space: nowrap;
+      }
+
+      .row {
+        flex: 1;
+      }
+
+      .row:last-of-type {
+        border-bottom: 0;
+      }
+
+      .col,
+      .header {
+        border-right: 1px solid black;
+        flex: 1;
+      }
+
+      .col:last-of-type,
+      .header:last-of-type {
+        border-right: none;
+      }
+
+      .dot {
+        color: red;
+        font-size: 1.25rem;
+        display: inline-block;
+        vertical-align: middle;
+      }
+
+      .tree {
+        font-size: 0.75rem;
+      }
+
+      .flex {
+        display: flex;
+      }
+
+      .flexcolumn {
+        flex-direction: column;
+      }
+
+      .name {
+        text-align: center;
+        padding: 10px;
+        border: 1px solid #000000;
+      }
+
+      .node {
+        margin: 2px;
+      }
+
+      .hcenter {
+        justify-content: center;
+      }
+
+      .vcenter {
+        align-items: center;
+      }
+
+      body {
+        padding: 0;
+        margin: 0;
+        font-family: Helvetica;
+      }
+
+      li {
+        margin: 8px 0;
+      }
+
+      h2 {
+        font-weight: bold;
+        margin-bottom: 15px;
+      }
+
+      del {
+        color: rgba(0, 0, 0, 0.3);
+      }
+    </style>
+  </head>
+
+  <body>
+    <input type="text" id="code" value="if(val == best) if(update==userUpdat) userBest = value; else groupBest = value;"/>
+    <h3>Chart</h3>
+    <div id="chart"></div>
+    <h3>Parsetree</h3>
+    <div id="parseTree"></div>
+    <h3>AST</h3>
+    <div id="ast"></div>
+  </body>
+</html>
