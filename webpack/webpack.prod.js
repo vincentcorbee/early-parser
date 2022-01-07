@@ -3,15 +3,18 @@ const common = require('./webpack.common')
 const MinifyPlugin = require('babel-minify-webpack-plugin')
 const path = require('path')
 const CleanWebpackPlugin = require('clean-webpack-plugin')
-const library = 'EarlyParser'
+const library = {
+  name: 'early-parser',
+  type: 'umd',
+}
 const entry = {
-  EarleyParser: path.resolve(__dirname, path.join('..', 'src', 'Parser.js')),
+  'early-parser': path.resolve(__dirname, path.join('..', 'src', 'index.js')),
 }
 
 module.exports = merge(common, {
   entry,
   plugins: [
-    new CleanWebpackPlugin(['lib'], {
+    new CleanWebpackPlugin(['dist'], {
       root: path.resolve(__dirname, '..'),
     }),
   ],
@@ -26,9 +29,8 @@ module.exports = merge(common, {
   mode: 'production',
   output: {
     filename: '[name].js',
-    path: path.resolve(__dirname, '..', 'lib'),
+    path: path.resolve(__dirname, '..', 'dist'),
     library,
-    libraryTarget: 'umd',
     globalObject: 'this',
     umdNamedDefine: true,
   },

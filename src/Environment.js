@@ -5,9 +5,11 @@ class Global {}
 export default class Environment {
   constructor(_parent = null, _global = null) {
     const self = this
-    let _this = _parent ? null : _global || new Global()
+    const _this = _parent ? null : _global || new Global()
     const _variables = _parent ? {} : _this
+
     // If Globalcode, this is set to Global object, else this is null and set at function execution
+
     const _proxy = new Proxy(_variables, {
       get(target, prop) {
         if (target.hasOwnProperty(prop)) {
@@ -15,7 +17,7 @@ export default class Environment {
         } else if (_parent) {
           return _parent.get(prop)
         } else {
-          throw new ReferenceError(`${prop} is not defined`)
+          throw new ReferenceError(`${prop} is not defined.`)
         }
       },
       set(target, prop, value) {
@@ -24,10 +26,11 @@ export default class Environment {
         } else if (_parent) {
           return _parent.set(prop, value)
         } else {
-          throw new ReferenceError(`${prop} is not defined`)
+          throw new ReferenceError(`${prop} is not defined.`)
         }
       },
     })
+
     _private.set(self, {
       _variables,
       _proxy,
@@ -49,7 +52,7 @@ export default class Environment {
   }
   define(prop, type, value = undefined) {
     if (type !== 'var' && _private.get(this)._variables.hasOwnProperty(prop)) {
-      throw new SyntaxError(`Identifier '${prop}' has already been declared`)
+      throw new SyntaxError(`Identifier '${prop}' has already been declared.`)
     }
     return (_private.get(this)._variables[prop] = value)
   }

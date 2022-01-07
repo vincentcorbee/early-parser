@@ -14,6 +14,7 @@ export default [
   ['MUL', /^\*/],
   ['LPAREN', /^\(/],
   ['RPAREN', /^\)/],
+  ['SEMI', /^;/]
   // ['SYMBOL', /./],
   ['IDENT', /^[$a-zA-Z]+(?:[a-zA-Z_\-]+)*/],
   // {
@@ -36,5 +37,4 @@ export default [
   //     return true
   //   }
   // },
-  // ['SEMI', /^;/],
 ]

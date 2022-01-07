@@ -1,25 +1,24 @@
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-const webpack = require('webpack')
 
 const config = {
   output: {
-    publicPath: '/'
+    publicPath: '/',
   },
   resolve: {
-    extensions: ['.js', '.ts']
+    extensions: ['.js', '.ts'],
   },
-  plugins: [
-    new BundleAnalyzerPlugin({ analyzerPort: 9898 }),
-    new webpack.NamedModulesPlugin()
-  ],
+  plugins: [new BundleAnalyzerPlugin({ analyzerPort: 9898 })],
   module: {
     rules: [
       {
         test: /\.[j|t]s$/,
         exclude: /node_modules/,
-        use: ['babel-loader']
-      }
-    ]
-  }
+        use: ['babel-loader'],
+      },
+    ],
+  },
+  optimization: {
+    moduleIds: 'named',
+  },
 }
 module.exports = config

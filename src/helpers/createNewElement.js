@@ -1,4 +1,4 @@
-export const createNewElement = (type = null, attributes = null, ns = null) => {
+const createNewElement = (type = null, attributes = null, ns = null) => {
   if (!type) {
     throw new ReferenceError('Type is not supplied')
   }
@@ -28,3 +28,5 @@ export const createNewElement = (type = null, attributes = null, ns = null) => {
   }
   return el
 }
+
+export default createNewElement

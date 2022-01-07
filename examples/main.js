@@ -1,9 +1,9 @@
-import Parser from './src/Parser'
-import Lexer from './src/Lexer'
+import { Parser, Lexer } from '../'
 
-import grammer from './grammer'
-import tokens from './tokens'
-import { printAST, printParseTree, printChart } from './src/parser/'
+import grammer from './grammer-a'
+import tokens from './tokens-a'
+import { printAST, printParseTree } from '../src/utils'
+import { ASI } from '../src'
 
 const input = document.getElementById('code')
 const code = input.value
@@ -15,28 +15,56 @@ const lexer = new Lexer()
 const parser = new Parser(lexer)
 
 lexer.tokens(tokens)
-lexer.ignore(/^[ \t\v\r]+/)
 
-// Still have to create presidence
-lexer.input(code)
+lexer.state('COMMENT', lexer => {
+  lexer.tokens([
+    {
+      name: 'ENDCOMMENT',
+      reg: /^\*\//,
+      begin: 'INITIAL',
+      cb: (substr, lexer) => (lexer.line += (substr.match(/\n/g) || []).length)
+    }
+  ])
+  lexer.ignore(/^[ \t\v\r]+/)
+  lexer.error(lexer => lexer.skip(1))
+})
+lexer.ignore(/^[ \t\v\r]+/)
+lexer.ignore(/^\/\/.*/)
 
 parser.grammer(grammer)
+
 parser.error = err => {
-  console.log(err)
-  printChart(parser.chart, chartEl)
+  astEl.innerHTML = '',
+  parseTreeEl.innerHTML = ''
+  chartEl.innerHTML = ''
+
+  return ASI(parser, err)
 }
 
-parser.parse(() => {
-  const AST = parser.AST
+const parse = (source) => {
+  astEl.innerHTML = '',
+  parseTreeEl.innerHTML = ''
+  chartEl.innerHTML = ''
 
-  console.log(parser.parseTree)
-  console.log(AST)
+  lexer.input(source)
 
-  printChart(parser.chart, chartEl)
+  parser.reset()
 
-  // The trees created are represented as an array, containing a tree for each finished state
+  parser.parse(({ AST, parseTree }) => {
 
-  parser.parseTree.forEach(parseTree => printParseTree(parseTree, parseTreeEl))
+    // The trees created are represented as an array, containing a tree for each finished state
 
-  AST.forEach(AST => printAST(AST, astEl))
-})
+    // printChart(chart, chartEl)
+
+    parseTree.forEach(parseTree => printParseTree(parseTree, parseTreeEl))
+
+    // AST.forEach(AST => printAST(AST, astEl))
+
+    console.log(lexer.source)
+    // console.log(AST)
+  })
+}
+
+input.addEventListener('input', e => parse(e.target.value))
+
+parse(code)

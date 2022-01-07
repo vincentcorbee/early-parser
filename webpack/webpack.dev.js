@@ -3,7 +3,6 @@ const path = require('path')
 const common = require('./webpack.common')
 const webpack = require('webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const CleanWebpackPlugin = require('clean-webpack-plugin')
 const pkg = require('../package.json')
 
@@ -11,7 +10,7 @@ const cwd = process.cwd()
 const dependencies = pkg.dependencies || {}
 const index = {
   hash: true,
-  template: 'index.html',
+  template: 'examples/index.html',
   chunks: ['main'],
 }
 const entry = {
@@ -41,42 +40,13 @@ module.exports = merge(common, {
       root: path.resolve(cwd),
     }),
     new webpack.HotModuleReplacementPlugin(),
-    new MiniCssExtractPlugin({
-      filename: '[name].bundle.css',
-    }),
     new HtmlWebpackPlugin(index),
   ],
   module: {
     rules: [
       {
-        test: /\.(s*)css$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          'css-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              plugins: () => [require('autoprefixer')()],
-            },
-          },
-          'sass-loader',
-        ],
-      },
-      {
         test: /\.html$/,
         use: ['html-loader'],
-      },
-      {
-        test: /\.(png|jp(e*)g|svg)$/,
-        use: [
-          {
-            loader: 'url-loader',
-            options: {
-              limit: 8000,
-              name: 'img/[hash]-[name].[ext]',
-            },
-          },
-        ],
       },
     ],
   },

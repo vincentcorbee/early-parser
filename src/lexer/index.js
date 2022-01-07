@@ -1,41 +1,10 @@
+import { throwError, setInitialState, TOKEN } from "./helpers"
+
 const _private = new WeakMap()
 
-const DEFAULT_TOKEN = {
-  type: 'SYMBOL',
-  reg: /./,
-}
-
-const setInitialState = self => {
-  const { states } = _private.get(self)
-  const state = {
-    name: 'INITIAL',
-    tokens: states.length ? states[0].tokens : [DEFAULT_TOKEN],
-    error: null,
-    start: 0,
-    end: null,
-  }
-  _private.get(self).state = state
-  _private.get(self).states = [state]
-}
-
-const throwError = (msg, line, col) => {
-  throw new Error(`${msg} (line: ${line}, col: ${col})`)
-}
-
-const TOKEN = (type, value, line, col, index) => ({
-  type,
-  value,
-  line,
-  col,
-  index,
-})
-
-class Lexer {
+export default class Lexer {
   constructor() {
-    const self = this
-
-    _private.set(self, {
-      TOKEN,
+    _private.set(this, {
       throwError,
       input: '',
       index: 0,
@@ -43,9 +12,9 @@ class Lexer {
       line: 1,
       state: null,
       states: [],
-      setInitialState,
     })
-    setInitialState(self)
+
+    setInitialState(this, _private)
   }
   set line(num) {
     _private.get(this).line = num
@@ -69,20 +38,17 @@ class Lexer {
     return _private.get(this).input
   }
   reset() {
-    const self = this
-    const { setInitialState } = _private.get(self)
-    setInitialState(self)
+    setInitialState(this, _private)
 
-    self.index = 0
-    self.col = 0
-    self.line = 1
+    this.index = 0
+    this.col = 0
+    this.line = 1
   }
   error(fn) {
     _private.get(this).state.error = fn
   }
   state(name, fn) {
-    const self = this
-    const { states, state } = _private.get(self)
+    const { states, state } = _private.get(this)
     const newState = {
       name,
       tokens: [],
@@ -90,28 +56,35 @@ class Lexer {
       start: self.index,
       end: null,
     }
-    _private.get(self).state = newState
-    fn(self)
+
+    _private.get(this).state = newState
+
+    fn(this)
+
     states.push(newState)
-    _private.get(self).state = state
+
+    _private.get(this).state = state
   }
   input(input) {
     _private.get(this).input = input
   }
   tokens(tokens = []) {
-    const self = this
-    const { state } = _private.get(self)
+    const { state } = _private.get(this)
 
-    state.tokens = []
+    state.tokens = tokens.flatMap(token => {
+      if (!token) return []
 
-    tokens.forEach(token => {
       if (Array.isArray(token)) {
-        state.tokens.push({
-          type: token[0],
-          reg: token[1],
-        })
+        const [ type, reg ] = token
+
+        return {
+          type,
+          reg: typeof reg === 'string' ? new RegExp(`^${reg}`) : reg,
+        }
       } else {
-        state.tokens.push(token)
+        if (typeof token.reg === 'string') token.reg = new RegExp(`^${token.reg}`)
+
+        return token
       }
     })
   }
@@ -123,26 +96,27 @@ class Lexer {
   }
   skip(num) {
     this.index += num
+
     return this.readToken()
   }
   peak() {
-    const self = this
-    const curIndex = self.index
-    const curLine = self.line
-    const curCol = self.col
-    const curState = _private.get(self).state
+    const curIndex = this.index
+    const curLine = this.line
+    const curCol = this.col
+    const curState = _private.get(this).state
     const token = this.readToken()
 
-    self.index = curIndex
-    self.line = curLine
-    self.col = curCol
-    _private.get(self).state = curState
+    this.index = curIndex
+    this.line = curLine
+    this.col = curCol
+
+    _private.get(this).state = curState
 
     return token
   }
   readToken() {
     const self = this
-    const { TOKEN, throwError, state, states, input } = _private.get(self)
+    const { throwError, state, states, input } = _private.get(self)
 
     if (!input) {
       return null
@@ -159,10 +133,10 @@ class Lexer {
 
     for (const tok of tokens) {
       const reg = tok.reg
-      let match = str.match(reg)
+      const result = str.match(reg)
 
-      if (match) {
-        match = match[0]
+      if (result) {
+        const [match] = result
 
         const curIndex = self.index
         const curCol = self.col
@@ -177,7 +151,7 @@ class Lexer {
 
         if (tok.type === 'NEWLINE') {
           // This token should be handle the what happens here
-          if (tok.cb && typeof tok.cb === 'function') {
+          if (typeof tok.cb === 'function') {
             if (!tok.cb(self)) {
               return self.readToken()
             }
@@ -193,10 +167,12 @@ class Lexer {
           const newState = states.find(state => state.name === tok.begin)
 
           newState.start = self.index
+
           state.end = curIndex
+
           _private.get(self).state = newState
 
-          if (tok.cb && typeof tok.cb === 'function') {
+          if (typeof tok.cb === 'function') {
             tok.cb(input.substring(state.start, state.end), self)
           }
 
@@ -211,17 +187,14 @@ class Lexer {
           curIndex
         )
 
-        if (token) {
-          return token
-        }
+        if (token) return token
       }
     }
 
     if (state.error) {
-      return state.error(self)
+      return state.error(this)
     } else {
-      throwError(`Lexer: Illegal character ${str[0]} `, self.line, self.col)
+      throwError(`Lexer: Illegal character ${str[0]} `, this.line, this.col)
     }
   }
 }
-export default Lexer

@@ -6,6 +6,10 @@
     <title></title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
+      textarea {
+        min-height: 300px;
+        width: 100%;
+      }
       .wrapper {
         background-color: #ffffff;
         padding: 20px;
@@ -119,9 +123,14 @@
       }
     </style>
   </head>
-
+  <!-- if(val == best) if(update==userUpdate) userBest = value; else groupBest = value; -->
   <body>
-    <input type="text" id="code" value="if(val == best) if(update==userUpdat) userBest = value; else groupBest = value;"/>
+    <textarea id="code">
+while (a > b){
+  if (a === z) continue
+  ++ b
+}
+    </textarea>
     <h3>Chart</h3>
     <div id="chart"></div>
     <h3>Parsetree</h3>

@@ -1,4 +1,4 @@
-import { createNewElement, append } from '../helpers/'
+import { createNewElement, append } from '../helpers'
 
 export const printAST = (AST, target = document.body) => {
   const root = createNewElement('div', ['class=tree ast flex hcenter'])

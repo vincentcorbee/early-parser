@@ -17,7 +17,7 @@ export default class State {
   }
 
   expectNonTerminal(grammer) {
-    const rhs = this.right[0]
+    const [rhs] = this.right
 
     return rhs && grammer.some(rule => rule.lhs === rhs)
   }

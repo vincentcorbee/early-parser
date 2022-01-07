@@ -3,7 +3,10 @@ const grammer = [
   //   exp: 'A : x | y A | y A z A',
   // },
   {
-    exp: 'Stmts : Stmt | Stmt Stmts',
+    exp: 'Stmts : Stmt | Stmts',
+    action([type, ...rest]) {
+      return [type, rest]
+    }
   },
   {
     exp: 'Stmt : Matched | Unmatched',
@@ -20,6 +23,10 @@ const grammer = [
   },
   {
     exp: 'BooleanExpr : IDENT EQUAL IDENT',
+    action([type, ...rest]) {
+      console.log(type, rest)
+      return [type, rest]
+    }
   },
   // {
   //   exp: 'S : STRING',

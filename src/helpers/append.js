@@ -1,4 +1,4 @@
-export const append = (parent, ...children) => {
+const append = (parent, ...children) => {
   children.forEach(child => {
     if (child) {
       parent.appendChild(child)
@@ -6,3 +6,5 @@ export const append = (parent, ...children) => {
   })
   return parent
 }
+
+export default append

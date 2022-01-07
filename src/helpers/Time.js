@@ -1,6 +1,6 @@
 const _private = new WeakMap()
 
-export class Time {
+export default class Time {
   constructor() {
     _private.set(this, {
       start: null,
