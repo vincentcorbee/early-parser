@@ -18,25 +18,29 @@ const ASI = (parser, err) => {
     state => state.lhs === 'OptSemi' && !state.complete
   )
 
+  // console.log('semi')
+
   if (token) {
     if (prevToken.type === Tokens.NEWLINE || prevToken.type === Tokens.RCBRACE) {
       if (optSemi && lexer.source[prevToken.index - 1] !== SEMI) {
-        const { index, col } = prevToken
+        const { index, col, line } = prevToken
 
         lexer.input(lexer.source.substring(0, index) + SEMI + lexer.source.substring(index))
 
         lexer.index = index
         lexer.col = col
-      } else {
-        lexer.index = prevToken.index + prevToken.value.length
+        lexer.line = line
+      }
+      else {
+        lexer.index = token.index
         lexer.col = token.col
+        lexer.line = token.line
       }
 
       parser.index = parser.index ? parser.index - 2 : parser.index
 
       return parser.resumeParse()
     } else {
-      console.log(prevToken)
       throw SyntaxError(
         `Unexpected token ${prevToken.value} (${prevToken.line}:${prevToken.col})`
       )

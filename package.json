@@ -1,7 +1,7 @@
 {
-  "name": "early-parser",
+  "name": "@digitalbranch/early-parser",
   "version": "1.0.0",
-  "description": "Javscript implementation of early parsing algorithem",
+  "description": "Javscript implementation of early parsing algorithm",
   "main": "index.js",
   "directories": {
     "test": "test"
@@ -25,6 +25,7 @@
     "babel-loader": "^8.0.4",
     "babel-minify-webpack-plugin": "^0.3.1",
     "clean-webpack-plugin": "^0.1.19",
+    "copy-webpack-plugin": "^10.2.1",
     "html-loader": "^0.5.5",
     "html-webpack-plugin": "^5.5.0",
     "ts-loader": "^5.3.1",

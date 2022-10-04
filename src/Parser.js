@@ -2,6 +2,31 @@ import { EMPTY } from './constants/constants'
 import { predict, scan, complete, createAST, getFinishedState, createParseTree } from './helpers'
 import State from './State'
 
+const getNonTerminal = (input) => {
+  const match = input.match(/([a-zA-Z_]+)(\[[a-zA-Z, _?]+\])?(\?)?/)
+
+  if (!match) return [input]
+
+  const [,nonTerminal, parameters = '', opt] = match
+  const params = (parameters ? parameters.replace(/\[|\]/g, '').split(',').map(param => {
+    if(/\?/.test(param)) {
+      return {
+        value: param.replace('?', '').trim(),
+        mod: '?',
+      }
+    }
+    return { value: param.trim() }
+  }) : [])
+
+  return [nonTerminal, params, !!opt]
+}
+const getTerminalNonTerminal = (p) => {
+  const charClass = /\^[[^\]]+][*|+]?/
+  const string = /^((?:"(?:[^"\\]|(?:\\.))*")|'(?:[^'\\]|(?:\\.))*')/
+
+  return p ? p === EMPTY ? [] : [(charClass.test(p) ? [new RegExp(p)] : string.test(p) ? [p] : getNonTerminal(p))] : []
+}
+
 const _private = new WeakMap()
 
 class Parser {
@@ -125,6 +150,7 @@ class Parser {
   parse(cb) {
     const cache = _private.get(this).cache[this.lexer.source]
 
+
     if (cache) {
       return cb(cache)
     }
@@ -135,7 +161,7 @@ class Parser {
       const { chart } = _private.get(this)
       // It is more efficient to create an ast directly instead of a parseTree first
       const parseTree = state.map(state => createParseTree(state))
-      const AST = parseTree.map(parseTree => createAST(parseTree))
+      const AST = parseTree.flatMap(parseTree => createAST(parseTree))
 
       this.index = 0
       this.started = false
@@ -148,7 +174,7 @@ class Parser {
 
       _private.get(this).chart = []
 
-      this.lexer.reset()
+      // this.lexer.reset()
 
       return cb({ chart, AST, parseTree })
     } else {
@@ -159,27 +185,46 @@ class Parser {
   }
 
   grammer(list) {
-    const charClass = /\[[^\]]+][*|+]?/
     const { grammer } = _private.get(this)
 
     list.forEach(({ exp, action }) => {
-      const match = exp.match(/[a-zA-Z]+ :/)
+      const match = exp.match(/([a-zA-Z_]+)(\[[a-zA-Z, _]+\])? *(?=:)/)
+
       // The splitting of the rhs does not work correctly when there are regexes with a | in it
       if (match) {
-        const lhs = match[0].slice(0, -2)
-        const rhs = exp.replace(lhs, '').trim().slice(2)
+        const lhs = match[1]
+        const parameters = match[2] || ''
 
         if (grammer.every(rule => rule.lhs !== lhs)) {
-          grammer.push({
-            action,
-            lhs,
-            rhs: rhs.split(/^\|\s+|\s+\|\s+/g).map(part =>
+
+          const rhs = exp
+            .replace(`${lhs}${parameters}`, '')
+            .trim()
+            .slice(1)
+            .split(/^\|\s+|\s+\|\s+/g).map(part =>
               part
                 .trim()
                 .split(' ')
-                .flatMap(p => p ? p === EMPTY ? [] : [(charClass.test(p) ? new RegExp(p) : p)] : [])
-            ),
-          })
+                .flatMap(getTerminalNonTerminal)
+          )
+          const params = [lhs, ...(parameters ? parameters.replace(/\[|\]/g, '').split(',').map(param => param.trim()) : [])]
+
+          while(params.length) {
+            grammer.push({
+              action,
+              lhs: `${params.join('_')}`,
+              rhs: rhs.map(part => part.flatMap(([v, p = []]) =>
+                p.reduce((acc, cur) => {
+                  if (cur.mod === '?')
+                    return acc += params.includes(cur.value) ? `_${cur.value}` : ''
+
+                  return acc +=`_${cur.value}`
+                } ,v)
+              )),
+            })
+
+            params.pop()
+          }
         }
       } else {
         throw new Error(`Incorrect grammer rule: ${exp}`)

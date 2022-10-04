@@ -4,6 +4,7 @@ const common = require('./webpack.common')
 const webpack = require('webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const CleanWebpackPlugin = require('clean-webpack-plugin')
+const CopyWebpacPluging = require('copy-webpack-plugin')
 const pkg = require('../package.json')
 
 const cwd = process.cwd()
@@ -38,6 +39,11 @@ module.exports = merge(common, {
   plugins: [
     new CleanWebpackPlugin([path.join(cwd, 'examples', 'dist')], {
       root: path.resolve(cwd),
+    }),
+    new CopyWebpacPluging({
+      patterns: [{
+        from: 'examples/service-worker.js'
+      }]
     }),
     new webpack.HotModuleReplacementPlugin(),
     new HtmlWebpackPlugin(index),

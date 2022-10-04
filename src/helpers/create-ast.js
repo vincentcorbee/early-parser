@@ -29,10 +29,9 @@ const createASTNode = (node, parentNode) => {
 }
 
 const createAST = parseTree => {
-  console.log(JSON.stringify(parseTree.flatMap(createASTNode), null, 2))
-  document.getElementById('ast').innerHTML = `<pre>${JSON.stringify(parseTree.flatMap(createASTNode), null, 2)}</pre>`
+  // document.getElementById('ast').innerHTML = `<pre>${JSON.stringify(parseTree.flatMap(createASTNode), null, 2)}</pre>`
   // return parseTree.map(mapNode)
-  return []
+  return parseTree.flatMap(createASTNode)
 }
 
 export default createAST

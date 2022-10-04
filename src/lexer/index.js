@@ -53,8 +53,9 @@ export default class Lexer {
       name,
       tokens: [],
       error: null,
-      start: self.index,
+      start: this.index,
       end: null,
+      fn
     }
 
     _private.get(this).state = newState
@@ -76,10 +77,11 @@ export default class Lexer {
 
       if (Array.isArray(token)) {
         const [ type, reg ] = token
+        const test = reg || type.toLowerCase()
 
         return {
           type,
-          reg: typeof reg === 'string' ? new RegExp(`^${reg}`) : reg,
+          reg: typeof test === 'string' ? new RegExp(`^${test}(?= )`) : test,
         }
       } else {
         if (typeof token.reg === 'string') token.reg = new RegExp(`^${token.reg}`)
@@ -115,15 +117,14 @@ export default class Lexer {
     return token
   }
   readToken() {
-    const self = this
-    const { throwError, state, states, input } = _private.get(self)
+    const { throwError, state, states, input } = _private.get(this)
 
     if (!input) {
       return null
     }
 
     const tokens = state.tokens
-    const str = input.substring(self.index)
+    const str = input.substring(this.index)
 
     if (str.length === 0) {
       return null
@@ -138,45 +139,45 @@ export default class Lexer {
       if (result) {
         const [match] = result
 
-        const curIndex = self.index
-        const curCol = self.col
-        const curLine = self.line
+        const curIndex = this.index
+        const curCol = this.col
+        const curLine = this.line
 
-        self.col += match.length
-        self.index += match.length
+        this.col += match.length
+        this.index += match.length
 
         if (tok.type === 'IGNORE') {
-          return self.readToken()
+          return this.readToken()
         }
 
         if (tok.type === 'NEWLINE') {
-          // This token should be handle the what happens here
-          if (typeof tok.cb === 'function') {
-            if (!tok.cb(self)) {
-              return self.readToken()
-            }
-          } else {
-            self.line += 1
-            self.col = 0
+          if (typeof tok.cb !== 'function') {
+            this.line += 1
+            this.col = 0
 
-            return self.readToken()
+            return this.readToken()
+          } else if (typeof tok.cb === 'function' && !tok.cb(this)) {
+            return this.readToken()
           }
+
         }
+
+        // console.log(this.line, this.col, this.index, str)
 
         if (tok.begin) {
           const newState = states.find(state => state.name === tok.begin)
 
-          newState.start = self.index
+          newState.start = this.index
 
           state.end = curIndex
 
-          _private.get(self).state = newState
+          _private.get(this).state = newState
 
           if (typeof tok.cb === 'function') {
-            tok.cb(input.substring(state.start, state.end), self)
+            tok.cb(input.substring(state.start, state.end), this)
           }
 
-          return self.readToken()
+          return this.readToken()
         }
 
         token = TOKEN(

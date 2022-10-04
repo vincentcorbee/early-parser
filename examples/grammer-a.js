@@ -1,5 +1,17 @@
 import { EMPTY } from "../src/constants/constants"
 
+const createSwitchStatementNode = ({ children, type }) => ({
+  type,
+  discriminant: children[0],
+  cases: children[3] ? [children[3], children[4]] : []
+})
+
+const createSwitchCaseNode = ({ children }) => ({
+  type: 'SwitchCase',
+  test: children[0],
+  consequent: children[1]
+})
+
 const createNewExpressionNode = ({ children }) => ({
   type: 'NewExpression',
   callee: children[1],
@@ -81,7 +93,8 @@ const grammer = [
         SourceElements`,
     action: ({ type, children: body }) => ({
       type,
-      body
+      body,
+      directives: []
     })
   },
   {
@@ -111,7 +124,7 @@ const grammer = [
         This
       | Null
       | Boolean
-      | String
+      | StringLiteral
       | Number
       | Identifier
       | ParenthesizedExpression
@@ -151,7 +164,8 @@ const grammer = [
     action: createNodeList
   },
   {
-    exp: 'LiteralField : Identifier PERIOD AssignmentExpression',
+    exp: `LiteralField :
+        Identifier PERIOD AssignmentExpression`,
     action: ({ children }) => ({
       type: "Property",
       key: children[0],
@@ -188,16 +202,18 @@ const grammer = [
     action: skipNode
   },
   {
-    exp: 'ShortNewExpression : NEW ShortNewSubexpression',
+    exp: `ShortNewExpression :
+        NEW ShortNewSubexpression`,
     action: createNewExpressionNode
   },
   {
-    exp: 'FullNewExpression : NEW FullNewSubexpression Arguments',
+    exp: `FullNewExpression :
+        NEW FullNewSubexpression Arguments`,
     action: createNewExpressionNode
   },
   {
     exp: `ShortNewSubexpression :
-        FullewSubexpression
+        FullNewSubexpression
       | ShortNewExpression`,
     action: skipNode
   },
@@ -289,7 +305,7 @@ const grammer = [
         EmptyStatement
       | ExpressionStatement OptSemi
       | VariableStatement OptSemi
-      | BlockStatement
+      | Block
       | IfStatement
       | SwitchStatement
       | DoWhileStatement OptSemi
@@ -297,7 +313,9 @@ const grammer = [
       | ForStatement
       | ContinueStatement OptSemi
       | BreakStatement OptSemi
-      | ReturnStatement OptSemi`,
+      | ReturnStatement OptSemi,
+      | ThrowStatement OptSemi
+      | TryStatement`,
     action: skipNode
   },
   /* Empty Statement */
@@ -306,7 +324,8 @@ const grammer = [
     action: ({ type }) => ({ type }),
   },
   {
-    exp: 'ExpressionStatement : Expression',
+    exp: `ExpressionStatement :
+        Expression`,
     action: ({ type, children }) => ({ type, expression: children[0] })
   },
   {
@@ -315,9 +334,10 @@ const grammer = [
   },
   /* Block Statement*/
   {
-    exp: 'BlockStatement : LCBRACE BlockStatements RCBRACE',
-    action: ({ type, children }) => ({
-      type,
+    exp: `Block :
+        LCBRACE BlockStatements RCBRACE`,
+    action: ({ children }) => ({
+      type: 'BlockStatement',
       body: children[1]
     })
   },
@@ -356,14 +376,27 @@ const grammer = [
   },
   /* For Statements */
   {
-    exp: 'ForStatement : FOR LPAREN ForInitializer SEMI OptionalExpression SEMI OptionalExpression RPAREN Statement',
-    action: ({ type, children }) => ({
-      type,
-      init: children[2],
-      test: children[4],
-      update: children[6],
-      body: children[8]
-    })
+    exp: `ForStatement :
+        FOR LPAREN ForInitializer SEMI OptionalExpression SEMI OptionalExpression RPAREN Statement
+      | FOR LPAREN ForInBinding IN Expression RPAREN Statement`,
+    action: ({ type, children }) => {
+      if (children.length === 9) {
+        return {
+          type,
+          init: children[2],
+          test: children[4],
+          update: children[6],
+          body: children[8]
+        }
+      }
+
+      return {
+        type: 'ForInStatement',
+        left: children[2],
+        right: children[4],
+        body: children[6]
+      }
+    }
   },
   {
     exp: `ForInitializer :
@@ -383,30 +416,56 @@ const grammer = [
      }
   },
   {
-    exp: 'ForInBinding : LeftSideExpression | VAR VariableDeclaration'
+    exp: `ForInBinding :
+        LeftSideExpression
+      | VAR VariableDeclaration`,
+    action({ children } ) {
+      if (children.length === 2) {
+        return {
+          type: 'VariableDeclaration',
+          declarations: [children[1]],
+          kind: returnValueFromNode({ children })
+        }
+      }
+
+      return children
+      }
   },
   /* Switch Statement */
   {
     exp: `SwitchStatement :
         SWITCH ParenthesizedExpression LCBRACE RCBRACE
-      | SWITCH ParenthesizedExpression LCBRACE CaseGroups LastCaseGroup RCBRACE`
+      | SWITCH ParenthesizedExpression LCBRACE CaseGroups LastCaseGroup RCBRACE`,
+    action: createSwitchStatementNode
   },
   {
     exp: `CaseGroups :
         ${EMPTY}
-      | CaseGroups CaseGroup`
+      | CaseGroups CaseGroup`,
+    action: skipNode
   },
   {
-    exp: 'CaseGroup : CaseGuards BlockStatementsPrefix'
+    exp: `CaseGroup :
+        CaseGuards BlockStatementsPrefix`,
+    action: createSwitchCaseNode
   },
   {
-    exp: 'LastCaseGroup : CaseGuards BlockStatements'
+    exp: `LastCaseGroup :
+        CaseGuards BlockStatements`,
+    action: createSwitchCaseNode
   },
   {
-    exp: 'CaseGuards : CaseGuard | CaseGuards CaseGuard'
+    exp: `CaseGuards :
+        CaseGuard
+      | CaseGuards CaseGuard`,
+    action: skipNode
   },
   {
-    exp: 'CaseGuard : CASE Expression PERIOD | DEFAULT PERIOD'
+    exp: `CaseGuard :
+        CASE Expression PERIOD
+      | DEFAULT PERIOD`,
+    action: ({ children }) => children.length === 3 ? children[1] : [null]
+
   },
   /* Do-While Statement */
   {
@@ -469,10 +528,56 @@ const grammer = [
     action: ({ children }) => children[1]
   },
   {
+    exp: `TryStatement :
+        TRY Block Catch
+      | TRY Block Finally
+      | TRY Block Catch Finally`,
+    action: ({ type, children }) => {
+      const hasCatchClause = children[2].type === 'CatchClause'
+
+      return {
+        type,
+        block: children[1],
+        handler: hasCatchClause ? children[2] : null,
+        finalizer: (hasCatchClause ? children[3] : children[2]) || null
+      }
+    }
+  },
+  {
+    exp: `Catch :
+        CATCH LPAREN Identifier RPAREN Block`,
+    action: ({ children }) => ({
+      type: "CatchClause",
+      param: children[2],
+      body: children[4],
+    })
+  },
+  {
+    exp: `Finally :
+        FINALLY Block`,
+    action: ({ children }) => children[1]
+  },
+  {
+    exp: `ThrowStatement :
+        THROW Expression`,
+    action: ({ type, children }) => ({
+        type,
+        argument: children[1]
+    })
+  },
+  {
     exp: `Expression :
         AssignmentExpression
-      | Expression COMMA AssignmentExpression`,
+      | SequenceExpression`,
     action: skipNode
+  },
+  {
+    exp: `SequenceExpression :
+        Expression COMMA AssignmentExpression`,
+    action: ({ children }) =>  ({
+      type: "SequenceExpression",
+      expressions: [ children[0], children[2] ]
+    })
   },
   {
     exp: `OptionalExpression :
@@ -596,7 +701,7 @@ const grammer = [
   {
     exp: `MultiplicativeExpression :
         UnaryExpression
-      | MultiplicativeExpression MULTIPLY UnExp
+      | MultiplicativeExpression MULTIPLY UnaryExpression
       | MultiplicativeExpression MODULUS UnaryExpression`,
     action: skipNode
   },
@@ -627,11 +732,15 @@ const grammer = [
     action: createLeafNode
   },
   {
+    exp: `BindingIdentifier :
+        Identifier`
+  },
+  {
     exp: 'Number : NUMBER',
     action: createLeafNode
   },
   {
-    exp: 'String : STRING',
+    exp: 'StringLiteral : STRING',
     action: createLeafNode
   },
   {
@@ -684,6 +793,54 @@ const grammer = [
       | FormalParameterList COMMA Identifier`,
     action: createNodeList
   },
+  {
+    exp: `ImportDeclaration :
+        IMPORT ImportClause FromClause ;
+      | IMPORT ModuleSpecifier ;`
+  },
+  {
+    exp: `ImportClause :
+        ImportedDefaultBinding
+      | NameSpaceImport
+      | NamedImports
+      | ImportedDefaultBinding COMMA NameSpaceImport
+      | ImportedDefaultBinding COMMA NamedImports`
+  },
+  {
+    exp: `ImportedDefaultBinding :
+        ImportedBinding`
+  },
+  {
+    exp: `NameSpaceImport :
+        MULTIPLY AS ImportedBinding`
+  },
+  { exp: `NamedImports :
+        LPAREN RPAREN
+      | LPAREN ImportsList RPAREN
+      | LPAREN ImportsList COMMA RPAREN`
+  },
+  {
+    exp: `FromClause :
+        FROM ModuleSpecifier`
+  },
+  {
+    exp: `ImportsList :
+        ImportSpecifier
+      | ImportsList COMMA ImportSpecifier`
+  },
+  {
+    exp: `ImportSpecifier :
+        ImportedBinding
+      | IdentifierName AS ImportedBinding`
+  },
+  {
+    exp: `ModuleSpecifier :
+        StringLiteral`
+  },
+  {
+    exp: `ImportedBinding :
+        BindingIdentifier`
+   }
 ]
 
 export default grammer
