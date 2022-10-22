@@ -1,30 +1,48 @@
 import { EMPTY } from './constants/constants'
-import { predict, scan, complete, createAST, getFinishedState, createParseTree } from './helpers'
+import {
+  predict,
+  scan,
+  complete,
+  createAST,
+  getFinishedState,
+  createParseTree,
+} from './helpers'
 import State from './State'
 
-const getNonTerminal = (input) => {
+const getNonTerminal = input => {
   const match = input.match(/([a-zA-Z_]+)(\[[a-zA-Z, _?]+\])?(\?)?/)
 
   if (!match) return [input]
 
-  const [,nonTerminal, parameters = '', opt] = match
-  const params = (parameters ? parameters.replace(/\[|\]/g, '').split(',').map(param => {
-    if(/\?/.test(param)) {
-      return {
-        value: param.replace('?', '').trim(),
-        mod: '?',
-      }
-    }
-    return { value: param.trim() }
-  }) : [])
+  const [, nonTerminal, parameters = '', opt] = match
+
+  const params = parameters
+    ? parameters
+        .replace(/\[|\]/g, '')
+        .split(',')
+        .map(param => {
+          if (param.includes('?'))
+            return {
+              value: param.replace('?', '').trim(),
+              mod: '?',
+            }
+
+          return { value: param.trim() }
+        })
+    : []
 
   return [nonTerminal, params, !!opt]
 }
-const getTerminalNonTerminal = (p) => {
+
+const getSymbol = p => {
   const charClass = /\^[[^\]]+][*|+]?/
   const string = /^((?:"(?:[^"\\]|(?:\\.))*")|'(?:[^'\\]|(?:\\.))*')/
 
-  return p ? p === EMPTY ? [] : [(charClass.test(p) ? [new RegExp(p)] : string.test(p) ? [p] : getNonTerminal(p))] : []
+  return p
+    ? p === EMPTY
+      ? []
+      : [charClass.test(p) ? [new RegExp(p)] : string.test(p) ? [p] : getNonTerminal(p)]
+    : []
 }
 
 const _private = new WeakMap()
@@ -36,16 +54,17 @@ class Parser {
     this.lexer = lexer
 
     _private.set(this, {
-      grammer: [],
-      actions: [],
+      grammar: {},
+      startRule: null,
       cache: {},
-      chart: []
+      chart: [],
     })
   }
 
   resumeParse() {
-    const { grammer, chart } = _private.get(this)
-    const [start_rule] = grammer
+    performance.mark('s')
+    const { grammar, chart, startRule } = _private.get(this)
+    const start_rule = grammar[startRule]
     const rhss = start_rule.rhs
     const lexer = this.lexer
 
@@ -54,72 +73,76 @@ class Parser {
     let index = this.index
 
     if (!this.started) {
-      chart[0] = rhss.map(
-        rhs =>
-          new State({
-            lhs: start_rule.lhs,
-            left: [],
-            right: rhs,
-            dot: 0,
-            from: 0,
-            action: start_rule.action,
-          })
-      )
+      const keys = {}
+      const stateSet = rhss.map(rhs => {
+        keys[`${start_rule.lhs}${rhs.join('')}${[].join('')}${0}`] = true
+
+        return new State({
+          lhs: start_rule.lhs,
+          left: [],
+          right: rhs,
+          dot: 0,
+          from: 0,
+          action: start_rule.action,
+        })
+      })
+
+      stateSet.keys = keys
+
+      chart[0] = stateSet
     }
 
     this.started = true
+    console.time()
 
-    while (index <= chart.length) {
+    while (chart[index]) {
       prevToken = token || prevToken
 
       token = lexer.readToken()
 
-      let changes = 1
+      const states = chart[index]
 
-      while (changes && chart[index]) {
-        changes = 0
+      let sI = 0
 
-        const states = chart[index]
+      while (states[sI]) {
+        const state = states[sI]
 
-        for (const state of states) {
-          // if (!token) {
-          //   if (state.complete) {
-          //     changes |= complete(chart, state, index)
-          //   }
-          // } else {
-            if (state.complete) {
-              changes |= complete(chart, state, index)
-            } else if (state.expectNonTerminal(grammer)) {
-              changes |= predict(chart, grammer, state.right, index)
-            } else {
-              changes |= scan(chart, token || undefined, state, index)
-            }
-          // }
+        if (state.expectNonTerminal(grammar)) {
+          predict(chart, grammar, state, index)
+        } else if (state.expectTerminal(grammar)) {
+          scan(chart, token || undefined, state, index)
+        } else if (state.complete) {
+          complete(chart, state, index, grammar)
+        } else {
+          throw Error('Illegal rule')
         }
 
-        if (!changes) {
-          break
-        }
+        sI++
       }
 
-      index += 1
-
-      this.index = index
+      this.index = index++
     }
 
-    if (token) {
+    console.timeEnd()
+
+    if (token)
       return this.error({
         prevToken,
         token,
         chart,
       })
-    }
 
     const finishedState = getFinishedState(chart, start_rule)
 
-    if (finishedState.length) {
-      return finishedState
-    }
+    performance.mark('e')
+
+    performance.measure('p', 's', 'e')
+
+    // console.log(performance.getEntriesByName('p')[0].duration)
+
+    console.log(finishedState)
+
+    if (finishedState.length) return finishedState
 
     return this.error({
       token: null,
@@ -131,63 +154,75 @@ class Parser {
   error(err) {
     const { prevToken } = err
 
-    if (prevToken) {
+    if (prevToken)
       throw SyntaxError(
-        `Parsing Error (line: ${prevToken.line}, col: ${prevToken.col}) of input stream`
+        `Parsing Error token: ${prevToken.value} (line: ${prevToken.line}, col: ${prevToken.col}) of input stream`
       )
-    }
 
     throw Error('Unknown parsing error')
   }
 
-  // In case of ambiguity, a seperate tree is created for each posible finished grammer start rule
+  // In case of ambiguity, a seperate tree is created for each posible finished grammar start rule
   // Four types of node for the parse tree
-  // 1. Symbol node i.e. completed grammer rule
+  // 1. Symbol node i.e. completed grammar rule
   // 2. Intermediate node i.e. completed production rule
   // 3. Terminal node i.e. a leaf
   // 4. Nodes i.e. represent the ambiguitiy - this is represented as seperate tree
 
   parse(cb) {
+    performance.mark('start')
+
     const cache = _private.get(this).cache[this.lexer.source]
 
+    // console.log(this.lexer.source)
 
-    if (cache) {
-      return cb(cache)
-    }
+    if (cache) return cb(cache)
 
     const state = this.resumeParse()
 
     if (state && state.length) {
       const { chart } = _private.get(this)
+
       // It is more efficient to create an ast directly instead of a parseTree first
       const parseTree = state.map(state => createParseTree(state))
+
       const AST = parseTree.flatMap(parseTree => createAST(parseTree))
 
       this.index = 0
       this.started = false
 
+      performance.mark('end')
+
+      performance.measure('parse', 'start', 'end')
+
+      const time = performance.getEntriesByName('parse')[0].duration
+
+      performance.clearMarks()
+      performance.clearMeasures()
+
       _private.get(this).cache[this.lexer.source] = {
         AST,
         parseTree,
-        chart
+        chart,
+        time: 0,
       }
+
+      // console.log(this.lexer.source)
 
       _private.get(this).chart = []
 
-      // this.lexer.reset()
-
-      return cb({ chart, AST, parseTree })
+      return cb({ chart, AST, parseTree, time })
     } else {
       this.error({
-        chart: _private.get(this).chart
+        chart: _private.get(this).chart,
       })
     }
   }
 
   grammer(list) {
-    const { grammer } = _private.get(this)
+    const { grammar } = _private.get(this)
 
-    list.forEach(({ exp, action }) => {
+    list.forEach(({ exp, action }, i) => {
       const match = exp.match(/([a-zA-Z_]+)(\[[a-zA-Z, _]+\])? *(?=:)/)
 
       // The splitting of the rhs does not work correctly when there are regexes with a | in it
@@ -195,40 +230,82 @@ class Parser {
         const lhs = match[1]
         const parameters = match[2] || ''
 
-        if (grammer.every(rule => rule.lhs !== lhs)) {
-
+        if (!grammar[lhs]) {
           const rhs = exp
             .replace(`${lhs}${parameters}`, '')
-            .trim()
-            .slice(1)
-            .split(/^\|\s+|\s+\|\s+/g).map(part =>
-              part
-                .trim()
-                .split(' ')
-                .flatMap(getTerminalNonTerminal)
-          )
-          const params = [lhs, ...(parameters ? parameters.replace(/\[|\]/g, '').split(',').map(param => param.trim()) : [])]
+            .replace(/^\s*:\s*/, '')
+            .split(/^\|\s+|\s+\|\s+/g)
+            .reduce((acc, expression) => {
+              /*
+                Expand optional symbols into extra right hand sides
+              */
+              const symbols = expression.split(' ').flatMap(getSymbol)
 
-          while(params.length) {
-            grammer.push({
-              action,
-              lhs: `${params.join('_')}`,
-              rhs: rhs.map(part => part.flatMap(([v, p = []]) =>
+              let hasOpt = false
+
+              symbols.forEach((symbol, i) => {
+                const [, , opt] = symbol
+
+                if (opt) {
+                  acc.push([...symbols])
+
+                  symbols.splice(i, 1)
+
+                  acc.push([...symbols])
+
+                  hasOpt = true
+                }
+              })
+
+              if (!hasOpt) acc.push(symbols)
+
+              return acc
+            }, [])
+
+          const params = [
+            lhs,
+            ...(parameters
+              ? parameters
+                  .replace(/\[|\]/g, '')
+                  .trim()
+                  .split(/\s*,\s*/)
+              : []),
+          ]
+
+          if (!_private.get(this).startRule) _private.get(this).startRule = lhs
+
+          while (params.length) {
+            const key = params.join('_')
+            let raw = `${lhs} : `
+            const rhsArray = rhs.map(part =>
+              part.flatMap(([v, p = []]) =>
                 p.reduce((acc, cur) => {
                   if (cur.mod === '?')
-                    return acc += params.includes(cur.value) ? `_${cur.value}` : ''
+                    return (acc += params.includes(cur.value) ? `_${cur.value}` : '')
 
-                  return acc +=`_${cur.value}`
-                } ,v)
-              )),
-            })
+                  return (acc += `_${cur.value}`)
+                }, v)
+              )
+            )
+
+            rhsArray.forEach(
+              (part, i) =>
+                (raw += `${part.join(' ')}${rhsArray[i + i] === undefined ? '' : ' | '}`)
+            )
+
+            const production = {
+              action,
+              lhs: key,
+              raw,
+              rhs: rhsArray,
+            }
+
+            grammar[key] = production
 
             params.pop()
           }
         }
-      } else {
-        throw new Error(`Incorrect grammer rule: ${exp}`)
-      }
+      } else throw new Error(`Incorrect grammar rule: ${exp}`)
     })
   }
 

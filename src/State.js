@@ -1,24 +1,62 @@
 export default class State {
-  constructor({ lhs, left, right, dot, from, action }) {
+  constructor({ lhs, left, right, dot, from, action, previous }) {
     this.lhs = lhs
     this.left = left
     this.right = right
     this.dot = dot
     this.from = from
-    this.id = (State.prototype.id || 0) + 1
-    this.previous = []
+    this.previous = previous || []
     this.action = action
-
-    State.prototype.id = this.id
+    this.nextNonTerminal = null
   }
 
   get complete() {
     return !this.right.length
   }
 
+  getTransitiveKey() {
+    return `${this.lhs}${this.right.join('')}${this.left.join('')}`
+  }
+
+  isNullable() {
+    return this.left.length === 0 && this.right.length === 0
+  }
+
+  hasRightRecursion(grammer) {
+    if (this.right.length > 1) return false
+
+    if (this.right.length === 1) {
+      const [symbol] = this.right
+
+      return symbol === this.lhs && !!grammer[symbol]
+    }
+
+    if (this.right.length === 0 && this.left.length > 0) {
+      const symbol = this.left[this.left.length - 1]
+
+      return symbol === this.lhs && !!grammer[symbol]
+    }
+
+    if (this.left === 0) return !!grammer[this.lhs]
+
+    return false
+  }
+
   expectNonTerminal(grammer) {
     const [rhs] = this.right
 
-    return rhs && grammer.some(rule => rule.lhs === rhs)
+    this.nextNonTerminal = rhs && grammer[rhs]
+
+    return !!this.nextNonTerminal
+  }
+
+  expectTerminal(grammer) {
+    const [rhs] = this.right
+
+    return !!(rhs && !grammer[rhs])
+  }
+
+  toString() {
+    return `${this.lhs}${this.right.join('')}${this.left.join('')}${this.from}`
   }
 }

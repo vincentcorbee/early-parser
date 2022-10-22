@@ -1,4 +1,6 @@
-import { createNewElement, append, TOKENS } from '../helpers'
+import append from './append'
+import createNewElement from './create-new-element'
+import { TOKENS } from '../constants/constants'
 
 export const printParseTree = (parseTree, target = document.body) => {
   const docFrag = createNewElement('documentFragment')

@@ -4,11 +4,11 @@ const MinifyPlugin = require('babel-minify-webpack-plugin')
 const path = require('path')
 const CleanWebpackPlugin = require('clean-webpack-plugin')
 const library = {
-  name: 'early-parser',
+  name: 'earley-parser',
   type: 'umd',
 }
 const entry = {
-  'early-parser': path.resolve(__dirname, path.join('..', 'src', 'index.js')),
+  'earley-parser': path.resolve(__dirname, path.join('..', 'src', 'index.js')),
 }
 
 module.exports = merge(common, {

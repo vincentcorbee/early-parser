@@ -5,7 +5,7 @@ export default class Time {
     _private.set(this, {
       start: null,
       end: null,
-      intervals: []
+      intervals: [],
     })
   }
   start() {
@@ -21,6 +21,10 @@ export default class Time {
   }
 
   lap() {}
+
+  getTime() {
+    return _private.get(this).end
+  }
 
   log(message) {
     const end = _private.get(this).end || performance.now()

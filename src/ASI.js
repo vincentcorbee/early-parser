@@ -1,6 +1,6 @@
 const Tokens = {
   NEWLINE: 'NEWLINE',
-  RCBRACE: 'RCBRACE'
+  RCBRACE: 'RCBRACE',
 }
 
 const SEMI = ';'
@@ -18,20 +18,19 @@ const ASI = (parser, err) => {
     state => state.lhs === 'OptSemi' && !state.complete
   )
 
-  // console.log('semi')
-
   if (token) {
     if (prevToken.type === Tokens.NEWLINE || prevToken.type === Tokens.RCBRACE) {
       if (optSemi && lexer.source[prevToken.index - 1] !== SEMI) {
         const { index, col, line } = prevToken
 
-        lexer.input(lexer.source.substring(0, index) + SEMI + lexer.source.substring(index))
+        lexer.input(
+          lexer.source.substring(0, index) + SEMI + lexer.source.substring(index)
+        )
 
         lexer.index = index
         lexer.col = col
         lexer.line = line
-      }
-      else {
+      } else {
         lexer.index = token.index
         lexer.col = token.col
         lexer.line = token.line

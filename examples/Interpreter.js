@@ -1,4 +1,4 @@
-import { flattenList } from './src/helpers'
+import { flattenList } from './flattenList'
 
 const unaryOperations = {
   '+': a => +a,
@@ -101,7 +101,6 @@ const getPath = arr =>
     []
   )
 
-
 const evaluate = (tree, env = {}) =>
   tree
     .map(node => {
@@ -115,9 +114,7 @@ const evaluate = (tree, env = {}) =>
         return evaluate(node[0], env)
       } else if (type === 'objectLiteral') {
         const obj = {}
-        const args = node[0]
-          ? mapFieldList(flattenList(evaluate(node[0], env)))
-          : []
+        const args = node[0] ? mapFieldList(flattenList(evaluate(node[0], env))) : []
 
         args.forEach(arg => {
           const key = arg[0].type === 'identifier' ? arg[0][0] : arg[0]

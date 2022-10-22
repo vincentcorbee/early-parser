@@ -1,4 +1,5 @@
-import { createNewElement, append } from '../helpers'
+import append from './append'
+import createNewElement from './create-new-element'
 
 export const printChart = (chart, target = document.body, completed = false) => {
   const table = createNewElement('div', ['class=table'])
@@ -11,7 +12,9 @@ export const printChart = (chart, target = document.body, completed = false) => 
     append(tableBody, append(col, createNewElement('div', ['class=row', `content=${i}`])))
 
     stateSet.forEach(state => {
-      const row = createNewElement('div', ['class=row'])
+      const row = createNewElement('div', [
+        `class=row${state.complete ? ' is--completed' : ''}`,
+      ])
       append(col, row)
 
       if (!completed || (completed && state.complete)) {

@@ -1,9 +1,12 @@
-import { createNewElement, append } from '../helpers'
+import append from './append'
+import createNewElement from './create-new-element'
 
 const visitor = {
   Program: {
-    enter: ({node, result, visitor, traverse}) => {
-      return result + `
+    enter: ({ node, result, visitor, traverse }) => {
+      return (
+        result +
+        `
       <ul>
         <li>
           <span>${node.type}</span>
@@ -15,17 +18,22 @@ const visitor = {
             <li>
               <span>body</span>
               <ul>
-                  ${node.body.map(child => traverse({ node: child, result, visitor, parent: node }))}
+                  ${node.body.map(child =>
+                    traverse({ node: child, result, visitor, parent: node })
+                  )}
               <ul>
             </li>
           </ul>
         </li>
       </ul>`
-    }
+      )
+    },
   },
   ThrowStatement: {
-    enter: ({node, result}) => {
-      return result + `
+    enter: ({ node, result }) => {
+      return (
+        result +
+        `
         <li>
           <span>${node.type}</span>
           <ul>
@@ -39,8 +47,9 @@ const visitor = {
             </li>
           </ul>
         </li>`
-    }
-  }
+      )
+    },
+  },
 }
 
 const traverse = ({ node, visitor, parent, result = '' }) => {
@@ -50,7 +59,7 @@ const traverse = ({ node, visitor, parent, result = '' }) => {
     const { enter } = actions
 
     if (enter) {
-      return enter({ node, parent, result, visitor, traverse})
+      return enter({ node, parent, result, visitor, traverse })
     }
   }
 

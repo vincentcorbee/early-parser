@@ -1,37 +1,36 @@
-import mapNode from "./map-node"
-
-const createASTNode = (node, parentNode) => {
-  const { action, value, type, children } = node
+export const createASTNode = (node, parentNode) => {
+  const { action, value, type, children, start = 0, end = 0 } = node
 
   // Perform sematic action on node
   if (typeof action === 'function') {
     let ASTNode
 
     if (children) {
-      ASTNode = action({ type, children: children.flatMap(child => createASTNode(child, node)) }, parentNode)
-    } else {
-      ASTNode = action({ type, value }, parentNode)
-    }
+      ASTNode = action(
+        {
+          type,
+          children: children.flatMap(child => createASTNode(child, node)),
+          start,
+          end,
+        },
+        parentNode
+      )
+    } else ASTNode = action({ type, value, start, end }, parentNode)
 
-    if (ASTNode === null) {
-      return []
-    }
+    if (ASTNode === null) return []
 
     return ASTNode
-
   } else {
     return {
       type,
       value,
-      children
+      children,
+      start,
+      end,
     }
   }
 }
 
-const createAST = parseTree => {
-  // document.getElementById('ast').innerHTML = `<pre>${JSON.stringify(parseTree.flatMap(createASTNode), null, 2)}</pre>`
-  // return parseTree.map(mapNode)
-  return parseTree.flatMap(createASTNode)
-}
+const createAST = parseTree => parseTree.flatMap(createASTNode)
 
 export default createAST

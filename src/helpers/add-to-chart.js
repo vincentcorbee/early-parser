@@ -1,4 +1,5 @@
-import inStateSet from "./in-state-set"
+import inStateSet from './in-state-set'
+import State from '../State'
 
 const addToChart = (chart, index, state) => {
   let stateSet = chart[index]
@@ -6,16 +7,24 @@ const addToChart = (chart, index, state) => {
   if (!stateSet) {
     stateSet = []
 
+    stateSet.keys = {}
+
     chart[index] = stateSet
   }
 
   const inSet = inStateSet(stateSet, state)
 
   if (!inSet) {
-    stateSet.push(state)
+    const newState = new State(state)
+
+    stateSet.keys[newState.toString()] = true
+
+    stateSet.push(newState)
+
+    return newState
   }
 
-  return !inSet
+  return null
 }
 
 export default addToChart

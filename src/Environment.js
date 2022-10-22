@@ -4,7 +4,6 @@ class Global {}
 
 export default class Environment {
   constructor(_parent = null, _global = null) {
-    const self = this
     const _this = _parent ? null : _global || new Global()
     const _variables = _parent ? {} : _this
 
@@ -31,7 +30,7 @@ export default class Environment {
       },
     })
 
-    _private.set(self, {
+    _private.set(this, {
       _variables,
       _proxy,
       _parent,
@@ -51,9 +50,9 @@ export default class Environment {
     return new Environment(this)
   }
   define(prop, type, value = undefined) {
-    if (type !== 'var' && _private.get(this)._variables.hasOwnProperty(prop)) {
+    if (type !== 'var' && _private.get(this)._variables.hasOwnProperty(prop))
       throw new SyntaxError(`Identifier '${prop}' has already been declared.`)
-    }
+
     return (_private.get(this)._variables[prop] = value)
   }
   get(prop) {

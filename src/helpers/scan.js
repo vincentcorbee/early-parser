@@ -1,8 +1,7 @@
-import addToChart from "./add-to-chart"
-import compare from "./compare"
-import State from "../State"
+import addToChart from './add-to-chart'
+import compare from './compare'
 
-const scan = (chart, token = { }, state, index) => {
+const scan = (chart, token = {}, state, index) => {
   if (state.right.length) {
     const { type, value: tokenValue } = token
     const [rhs] = state.right
@@ -15,28 +14,23 @@ const scan = (chart, token = { }, state, index) => {
         : rhs
 
     if (compare(value, right)) {
-      const newState = new State({
-        lhs: state.lhs,
-        left: [...state.left, rhs],
-        dot: state.dot + 1,
+      const { lhs, left, dot, from, action } = state
+      const newState = addToChart(chart, index + 1, {
+        lhs,
+        left: [...left, rhs],
+        dot: dot + 1,
         right: state.right.slice(1),
-        from: state.from,
-        action: state.action,
+        from,
+        action,
       })
-      const changes = addToChart(chart, index + 1, newState)
 
-      if (changes) {
+      if (newState) {
         newState.previous = [state]
+
         state.token = tokenValue
         state.tokenMeta = token
       }
-
-      return changes
     }
-
-    return false
-  } else {
-    return false
   }
 }
 

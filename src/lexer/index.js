@@ -1,4 +1,4 @@
-import { throwError, setInitialState, TOKEN } from "./helpers"
+import { throwError, setInitialState, TOKEN } from './helpers'
 
 const _private = new WeakMap()
 
@@ -55,7 +55,7 @@ export default class Lexer {
       error: null,
       start: this.index,
       end: null,
-      fn
+      fn,
     }
 
     _private.get(this).state = newState
@@ -76,7 +76,7 @@ export default class Lexer {
       if (!token) return []
 
       if (Array.isArray(token)) {
-        const [ type, reg ] = token
+        const [type, reg] = token
         const test = reg || type.toLowerCase()
 
         return {
@@ -119,16 +119,12 @@ export default class Lexer {
   readToken() {
     const { throwError, state, states, input } = _private.get(this)
 
-    if (!input) {
-      return null
-    }
+    if (!input) return null
 
     const tokens = state.tokens
     const str = input.substring(this.index)
 
-    if (str.length === 0) {
-      return null
-    }
+    if (str.length === 0) return null
 
     let token = null
 
@@ -146,9 +142,7 @@ export default class Lexer {
         this.col += match.length
         this.index += match.length
 
-        if (tok.type === 'IGNORE') {
-          return this.readToken()
-        }
+        if (tok.type === 'IGNORE') return this.readToken()
 
         if (tok.type === 'NEWLINE') {
           if (typeof tok.cb !== 'function') {
@@ -159,7 +153,6 @@ export default class Lexer {
           } else if (typeof tok.cb === 'function' && !tok.cb(this)) {
             return this.readToken()
           }
-
         }
 
         // console.log(this.line, this.col, this.index, str)
@@ -173,9 +166,8 @@ export default class Lexer {
 
           _private.get(this).state = newState
 
-          if (typeof tok.cb === 'function') {
+          if (typeof tok.cb === 'function')
             tok.cb(input.substring(state.start, state.end), this)
-          }
 
           return this.readToken()
         }

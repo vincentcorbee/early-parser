@@ -6,6 +6,9 @@
     <title></title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
+      * {
+        box-sizing: border-box;
+      }
       textarea {
         min-height: 300px;
         width: 100%;
@@ -20,7 +23,7 @@
         margin-right: 10px;
       }
 
-      .wrapper>div:not(:last-of-type) {
+      .wrapper > div:not(:last-of-type) {
         margin-bottom: 10px;
       }
 
@@ -85,6 +88,10 @@
         flex-direction: column;
       }
 
+      .is--completed {
+        background-color: hsla(240, 100%, 50%, 0.2);
+      }
+
       .name {
         text-align: center;
         padding: 10px;
@@ -125,21 +132,22 @@
   </head>
   <!-- if(val == best) if(update==userUpdate) userBest = value; else groupBest = value; -->
   <body>
-    <textarea id="code">
-      var i = 0;
-      var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;
-      var i = 0;
-var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;
-var i = 0;
-var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;
-var i = 0;
-var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;var i = 0;
-    </textarea>
-    <h3>Chart</h3>
-    <div id="chart"></div>
-    <h3>Parsetree</h3>
-    <div id="parseTree"></div>
-    <h3>AST</h3>
-    <div id="ast"></div>
+    <div class="flex" style="height: 100vh; overflow: hidden">
+      <div style="flex: 1; padding: 16px; width: 50%; max-width: 50%">
+        <h3>Code</h3>
+        <textarea id="code">aaaaa</textarea>
+        <!-- <h3>Parsetree</h3>
+        <div id="parseTree"></div> -->
+        <h3>Chart</h3>
+        <div id="chart"></div>
+      </div>
+      <div style="flex: 1; padding: 16px; width: 50%; max-width: 50%; overflow: scroll">
+        <div class="flex" style="align-items: center">
+          <h3>AST</h3>
+          <span style="margin-left: auto" id="duration">0ms</span>
+        </div>
+        <div id="ast"></div>
+      </div>
+    </div>
   </body>
 </html>
