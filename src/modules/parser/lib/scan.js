@@ -1,7 +1,7 @@
-import addToChart from './add-to-chart'
-import compare from './compare'
+import { addToChart } from './add-to-chart'
+import { compare } from './compare'
 
-const scan = (chart, token = {}, state, index) => {
+export const scan = (chart, token = {}, state, index) => {
   if (state.right.length) {
     const { type, value: tokenValue } = token
     const [rhs] = state.right
@@ -33,5 +33,3 @@ const scan = (chart, token = {}, state, index) => {
     }
   }
 }
-
-export default scan

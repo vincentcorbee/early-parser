@@ -1,6 +1,6 @@
-import addToChart from './add-to-chart'
+import { addToChart } from './add-to-chart'
 
-const predict = (chart, grammer, state, from) => {
+export const predict = (chart, grammer, state, from) => {
   const rule = state.nextNonTerminal
 
   if (rule) {
@@ -24,5 +24,3 @@ const predict = (chart, grammer, state, from) => {
     )
   }
 }
-
-export default predict

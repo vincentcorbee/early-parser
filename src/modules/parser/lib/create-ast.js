@@ -31,6 +31,4 @@ export const createASTNode = (node, parentNode) => {
   }
 }
 
-const createAST = parseTree => parseTree.flatMap(createASTNode)
-
-export default createAST
+export const createAST = parseTree => parseTree.flatMap(createASTNode)

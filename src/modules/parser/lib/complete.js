@@ -1,8 +1,8 @@
-import addToChart from './add-to-chart'
+import { addToChart } from './add-to-chart'
 
 const transitiveItems = {}
 
-const complete = (chart, state, index, grammar) => {
+export const complete = (chart, state, index, grammar) => {
   const transitiveItem = transitiveItems[state.getTransitiveKey()]
 
   if (transitiveItem) {
@@ -15,13 +15,15 @@ const complete = (chart, state, index, grammar) => {
       action: transitiveItem.action,
     })
 
-    if (newState) newState.previous = [...state.previous, state]
+    if (newState) newState.addPrevious(state)
 
     return
   }
 
   if (state.hasRightRecursion(grammar)) {
-    const fromStates = chart[state.from].filter(fromState => {
+    const fromStates = []
+
+    for (const fromState of chart[state.from]) {
       const { right, left, lhs } = fromState
 
       if (
@@ -29,10 +31,8 @@ const complete = (chart, state, index, grammar) => {
         left.join(' ') === state.left.slice(0, -1).join(' ') &&
         right[0] === state.lhs
       )
-        return true
-
-      return false
-    })
+        fromStates.push(fromState)
+    }
 
     if (fromStates.length === 1) {
       const { right, left, dot, lhs, from, action, previous } = fromStates[0]
@@ -44,17 +44,18 @@ const complete = (chart, state, index, grammar) => {
         dot: dot + 1,
         from,
         action,
+        previous,
       })
 
       if (newState) {
-        newState.previous = [...previous, state]
+        newState.addPrevious(state)
 
         transitiveItems[newState.getTransitiveKey()] = newState
       }
     }
   }
 
-  chart[state.from].forEach(fromState => {
+  for (const fromState of chart[state.from]) {
     const {
       right: fromRight,
       left: fromLeft,
@@ -73,11 +74,10 @@ const complete = (chart, state, index, grammar) => {
         dot: dot + 1,
         from,
         action,
+        previous,
       })
 
-      if (newState) newState.previous = [...previous, state]
+      if (newState) newState.addPrevious(state)
     }
-  })
+  }
 }
-
-export default complete

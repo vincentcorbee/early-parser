@@ -5,7 +5,7 @@ require('esbuild').build({
     index: path.resolve(__dirname, path.join('..', 'src', 'index.js')),
     utils: path.resolve(__dirname, path.join('..', 'src', 'utils', 'index.js')),
   },
-  outdir: 'lib',
+  outdir: 'build',
   bundle: true,
   minify: true,
   format: 'esm',

@@ -1,5 +1,5 @@
-import { TOKENS } from '../constants/constants'
-import defaultAction from './default-action'
+import { TOKENS } from '../../../constants/constants'
+import { defaultAction } from './default-action'
 
 let end = []
 let start = 0
@@ -7,7 +7,12 @@ let start = 0
 const getLengthOfToken = token =>
   typeof token === 'string' ? token.length : token.toString().length
 
-const createParseTree = (state, parentNode = null, previousToken = null, tree = []) => {
+export const createParseTree = (
+  state,
+  parentNode = null,
+  previousToken = null,
+  tree = []
+) => {
   if (tree.length === 0) {
     end = []
     start = 0
@@ -27,6 +32,7 @@ const createParseTree = (state, parentNode = null, previousToken = null, tree = 
     nodeType,
     type,
     start: 0,
+    end: 0,
   }
 
   let newPreviousToken = previousToken
@@ -50,7 +56,7 @@ const createParseTree = (state, parentNode = null, previousToken = null, tree = 
     node.end = previousToken.index
   }
 
-  // Not all states should have actions, only completed rules
+  // Not all states should have actions, only completed ones
   if (complete) node.action = action
 
   if (nodeType === TERMINAL) node.value = token
@@ -76,5 +82,3 @@ const createParseTree = (state, parentNode = null, previousToken = null, tree = 
 
   return tree
 }
-
-export default createParseTree

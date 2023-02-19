@@ -1,9 +1,11 @@
-// import grammar from './grammer-a'
-import grammar from './grammar-c'
-// import grammar from './grammer-b'
+// import grammar from './grammar'
+import grammar from './grammar-a'
+// import grammar from './grammar-c'
+// import grammar from './grammar-b'
 import tokens from './tokens-a'
-import { ASI, Parser, Lexer } from '../lib'
-import { printChart, printParseTree } from '../lib/utils'
+// import tokens from './tokens'
+import { ASI, Parser, Lexer } from '../src'
+import { printChart, printParseTree, printAST } from '../src/utils'
 
 // import './register-service-worker'
 
@@ -20,7 +22,7 @@ const parser = new Parser(lexer)
 
 let comments = []
 
-// lexer.tokens(tokens)
+lexer.tokens(tokens)
 
 lexer.state('COMMENT', lexer => {
   lexer.tokens([
@@ -82,26 +84,26 @@ const parse = source => {
 
     durationEl.textContent = `${Math.round(time)}ms`
 
-    // astEl.innerHTML = `<pre>${JSON.stringify(
-    //   {
-    //     type: 'File',
-    //     program,
-    //     comments,
-    //   },
-    //   null,
-    //   2
-    // )}</pre>`
+    astEl.innerHTML = `<pre>${JSON.stringify(
+      {
+        type: 'File',
+        program,
+        comments,
+      },
+      null,
+      2
+    )}</pre>`
 
-    printParseTree(parseTree[0], astEl)
+    // printParseTree(parseTree[0], astEl)
 
     // The trees created are represented as an array, containing a tree for each finished state
 
-    printChart(chart, chartEl)
+    // printChart(chart, chartEl)
 
-    // parseTree.forEach(parseTree => printParseTree(parseTree, parseTreeEl))
+    // parseTree.forEach(parseTree => printParseTree(parseTree, astEl))
 
     // AST.forEach(AST => printAST(AST, astEl))
-    // console.log(AST)
+    console.log(AST)
     // console.log(lexer.source)
     // console.log(AST)
   })

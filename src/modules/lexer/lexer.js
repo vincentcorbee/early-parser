@@ -2,7 +2,7 @@ import { throwError, setInitialState, TOKEN } from './helpers'
 
 const _private = new WeakMap()
 
-export default class Lexer {
+export class Lexer {
   constructor() {
     _private.set(this, {
       throwError,
@@ -155,8 +155,6 @@ export default class Lexer {
           }
         }
 
-        // console.log(this.line, this.col, this.index, str)
-
         if (tok.begin) {
           const newState = states.find(state => state.name === tok.begin)
 
@@ -184,10 +182,7 @@ export default class Lexer {
       }
     }
 
-    if (state.error) {
-      return state.error(this)
-    } else {
-      throwError(`Lexer: Illegal character ${str[0]} `, this.line, this.col)
-    }
+    if (state.error) return state.error(this)
+    else throwError(`Lexer: Illegal character ${str[0]} `, this.line, this.col)
   }
 }

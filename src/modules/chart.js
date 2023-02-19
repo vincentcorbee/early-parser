@@ -1,6 +1,6 @@
-import StateSet from './StateSet'
+import { StateSet } from './state-set'
 
-class Chart {
+export class Chart {
   columns = []
 
   add() {
@@ -21,5 +21,3 @@ class Chart {
     }
   }
 }
-
-export default Chart

@@ -2,7 +2,7 @@ const _private = new WeakMap()
 // Global should hold the variables
 class Global {}
 
-export default class Environment {
+export class Environment {
   constructor(_parent = null, _global = null) {
     const _this = _parent ? null : _global || new Global()
     const _variables = _parent ? {} : _this

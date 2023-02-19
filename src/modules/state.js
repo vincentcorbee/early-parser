@@ -1,11 +1,11 @@
-export default class State {
+export class State {
   constructor({ lhs, left, right, dot, from, action, previous }) {
     this.lhs = lhs
     this.left = left
     this.right = right
     this.dot = dot
     this.from = from
-    this.previous = previous || []
+    this.previous = previous ? [...previous] : []
     this.action = action
     this.nextNonTerminal = null
   }
@@ -54,6 +54,10 @@ export default class State {
     const [rhs] = this.right
 
     return !!(rhs && !grammer[rhs])
+  }
+
+  addPrevious(state) {
+    this.previous.push(state)
   }
 
   toString() {

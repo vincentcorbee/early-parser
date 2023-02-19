@@ -70,40 +70,32 @@ export const printAST = (AST, target = document.body) => {
   const root = createNewElement('div', ['class=tree ast flex hcenter'])
   const docFrag = createNewElement('documentFragment')
 
-  const createTree = tree => {
+  const createTree = node => {
     const docFrag = createNewElement('documentFragment')
 
-    tree.forEach(node => {
-      const isList =
-        Array.isArray(node) &&
-        (node.length > 1 || (node.length === 1 && typeof node[0] === 'object'))
-      const el = createNewElement('div', ['class=node flex flexcolumn'])
-      const value = isList
-        ? node.type
-        : node
-        ? node.type === 'undefined'
-          ? 'undefined'
-          : node[0] || node
-        : node
+    const { children } = node
 
-      if (value) {
-        append(el, createNewElement('span', ['class=name', `content=${value}`]))
-      }
+    const el = createNewElement('div', ['class=node flex flexcolumn'])
+    const value = children ? node.type : node.value
 
-      append(docFrag, el)
+    console.log(value)
 
-      if (isList) {
-        append(
-          el,
-          append(createNewElement('div', ['class=children flex']), createTree(node))
-        )
-      }
-    })
+    if (value) append(el, createNewElement('span', ['class=name', `content=${value}`]))
+
+    append(docFrag, el)
+
+    if (children) {
+      const childreEl = createNewElement('div', ['class=children flex'])
+
+      children.forEach(child => {
+        append(el, append(childreEl, createTree(child)))
+      })
+    }
 
     return docFrag
   }
 
-  target.innerHTML = traverse({ node: AST, visitor, result: '' })
+  // target.innerHTML = traverse({ node: AST, visitor, result: '' })
 
-  // append(target, append(docFrag, append(root, createTree(AST))))
+  append(target, append(docFrag, append(root, createTree(AST))))
 }

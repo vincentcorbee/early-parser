@@ -13,7 +13,7 @@ const grammar = [
   // },
   {
     exp: `A :
-      a A
+      A a
     | ${EMPTY}`,
   },
   // {

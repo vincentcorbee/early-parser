@@ -1,4 +1,3 @@
-import { EMPTY } from './constants/constants'
 import {
   predict,
   scan,
@@ -6,52 +5,18 @@ import {
   createAST,
   getFinishedState,
   createParseTree,
-} from './helpers'
-import State from './State'
-
-const getNonTerminal = input => {
-  const match = input.match(/([a-zA-Z_]+)(\[[a-zA-Z, _?]+\])?(\?)?/)
-
-  if (!match) return [input]
-
-  const [, nonTerminal, parameters = '', opt] = match
-
-  const params = parameters
-    ? parameters
-        .replace(/\[|\]/g, '')
-        .split(',')
-        .map(param => {
-          if (param.includes('?'))
-            return {
-              value: param.replace('?', '').trim(),
-              mod: '?',
-            }
-
-          return { value: param.trim() }
-        })
-    : []
-
-  return [nonTerminal, params, !!opt]
-}
-
-const getSymbol = p => {
-  const charClass = /\^[[^\]]+][*|+]?/
-  const string = /^((?:"(?:[^"\\]|(?:\\.))*")|'(?:[^'\\]|(?:\\.))*')/
-
-  return p
-    ? p === EMPTY
-      ? []
-      : [charClass.test(p) ? [new RegExp(p)] : string.test(p) ? [p] : getNonTerminal(p)]
-    : []
-}
+  getSymbol,
+} from './lib'
+import { StateSet } from '../state-set'
 
 const _private = new WeakMap()
 
-class Parser {
+export class Parser {
   constructor(lexer) {
     this.started = false
     this.index = 0
     this.lexer = lexer
+    this.cacheLength = 0
 
     _private.set(this, {
       grammar: {},
@@ -73,11 +38,10 @@ class Parser {
     let index = this.index
 
     if (!this.started) {
-      const keys = {}
-      const stateSet = rhss.map(rhs => {
-        keys[`${start_rule.lhs}${rhs.join('')}${[].join('')}${0}`] = true
+      const stateSet = new StateSet()
 
-        return new State({
+      rhss.forEach(rhs => {
+        stateSet.add({
           lhs: start_rule.lhs,
           left: [],
           right: rhs,
@@ -87,12 +51,11 @@ class Parser {
         })
       })
 
-      stateSet.keys = keys
-
       chart[0] = stateSet
     }
 
     this.started = true
+
     console.time()
 
     while (chart[index]) {
@@ -102,11 +65,7 @@ class Parser {
 
       const states = chart[index]
 
-      let sI = 0
-
-      while (states[sI]) {
-        const state = states[sI]
-
+      for (const state of states) {
         if (state.expectNonTerminal(grammar)) {
           predict(chart, grammar, state, index)
         } else if (state.expectTerminal(grammar)) {
@@ -116,14 +75,10 @@ class Parser {
         } else {
           throw Error('Illegal rule')
         }
-
-        sI++
       }
 
       this.index = index++
     }
-
-    console.timeEnd()
 
     if (token)
       return this.error({
@@ -134,13 +89,13 @@ class Parser {
 
     const finishedState = getFinishedState(chart, start_rule)
 
+    console.timeEnd()
+
     performance.mark('e')
 
     performance.measure('p', 's', 'e')
 
     // console.log(performance.getEntriesByName('p')[0].duration)
-
-    console.log(finishedState)
 
     if (finishedState.length) return finishedState
 
@@ -207,6 +162,8 @@ class Parser {
         time: 0,
       }
 
+      this.cacheLength++
+
       // console.log(this.lexer.source)
 
       _private.get(this).chart = []
@@ -222,7 +179,7 @@ class Parser {
   grammer(list) {
     const { grammar } = _private.get(this)
 
-    list.forEach(({ exp, action }, i) => {
+    list.forEach(({ exp, action }) => {
       const match = exp.match(/([a-zA-Z_]+)(\[[a-zA-Z, _]+\])? *(?=:)/)
 
       // The splitting of the rhs does not work correctly when there are regexes with a | in it
@@ -276,7 +233,9 @@ class Parser {
 
           while (params.length) {
             const key = params.join('_')
+
             let raw = `${lhs} : `
+
             const rhsArray = rhs.map(part =>
               part.flatMap(([v, p = []]) =>
                 p.reduce((acc, cur) => {
@@ -318,5 +277,3 @@ class Parser {
     this.lexer.reset()
   }
 }
-
-export default Parser
